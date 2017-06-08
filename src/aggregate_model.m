@@ -1,6 +1,11 @@
+function out=aggregate_model(in,x0)
 %    aggregate model
+if nargin == 1
+    UseX0 = false;
+elseif nargin == 2
+    UseX0 = true;
+end
 %% input data
-in.T=24;
 T           = in.T;                 %% time horizons
 % Nunit       = in.Nunit;             %% number of units
 Ntype       = in.Ntype;             %% number of unit type
@@ -19,22 +24,17 @@ TZ_t0       = in.TY_t0;             %% length of time Zg has to be 0 at the begi
 Ng          = in.Ng;                %% number per unit type       1xNtype
 % typeID      = in.typeID;            %% type ID                    1xNunit        
 %%--------------------------  wind and PV ---------------------------------
-% Windmax     = in.Windmax;           %% theory output of wind power
-% PVmax       = in.PVmax;             %% theory output of PV
-Windmax     = in.Windmax(1:T);           %% theory output of wind power
-PVmax       = in.PVmax(1:T);             %% theory output of PV
+Windmax     = in.Windmax;           %% theory output of wind power
+PVmax       = in.PVmax;             %% theory output of PV
 %%--------------------------  tie lines -----------------------------------
 Tieline     = in.Tieline;           %% tie lines
 Ftie0       = in.Ftie0;             %% fixed power flow
 Etie        = in.Etie;              %% exchage energy each day
 TDstart     = in.TDstart;
 %%---------------------------- system -------------------------------------
-% Demand      = in.Demand;            %% demand
-% ReserveUp   = in.ReserveUp;         %% up reserve
-% ReserveDn   = in.ReserveDn;         %% dowen reserve
-Demand      = in.Demand(1:T);            %% demand
-ReserveUp   = in.ReserveUp(1:T);         %% up reserve
-ReserveDn   = in.ReserveDn(1:T);         %% dowen reserve
+Demand      = in.Demand;            %% demand
+ReserveUp   = in.ReserveUp;         %% up reserve
+ReserveDn   = in.ReserveDn;         %% dowen reserve
 %%---------------------------- ADMM ---------------------------------------
 % Ftie_val    = in.Ftie_val;          %% exchange information of tie line power flow 
 % lamda       = in.lamda;             %% multiplers
@@ -51,6 +51,16 @@ Y        = binvar(T,Ntype,'full');   %% start up indicator
 Z        = binvar(T,Ntype,'full');   %% shut down indicator
 %%---------------------------- tie lines ----------------------------------
 Ftie = sdpvar(T,Ntie,'full');        %% tie-line power flow
+%% initial assign
+if UseX0
+    assign(Pwind, x0.Pwind);
+    assign(Ppv, x0.Ppv);
+    assign(Pagg, x0.Pagg);
+    assign(S, x0.S);
+    assign(Y, x0.Y);
+    assign(Z, x0.Z);
+    assign(Ftie, x0.Ftie);
+end 
 %% constraints
 Constraint=[];
 %--------------------- thermal unit constraints ------------------------
@@ -154,6 +164,19 @@ Ops.gurobi.DisplayInterval = 20;
 diag = optimize(Constraint,minLang,Ops); 
 % check(Constraints);
 if diag.problem ~= 0
+    check(Constraint);
     error(yalmiperror(diag.problem));
 end
 toc
+%% read values of variables
+%%--------------------------- wind power & PV -----------------------------
+out.Pwind = value(Pwind);    %% output of wind power 
+out.Ppv   = value(Ppv);      %% output of PV 
+%%--------------------------- thermal unit --------------------------------
+out.Pagg  = value(Pagg);
+out.S     = value(S);
+out.Y     = value(Y);
+out.Z     = value(Z);
+%%---------------------------- tie lines ----------------------------------
+out.Ftie  = value( Ftie);
+out.minLang = value(minLang);
