@@ -70,4 +70,4 @@ for a=1:A
     in.area(a).ReserveDn   = xlsread(areaFile{a},8,['C2:C' num2str(T+1)]);  %% down reserve
 end
 %% save data
-save input_data in;
+save aggregate_input_data in;

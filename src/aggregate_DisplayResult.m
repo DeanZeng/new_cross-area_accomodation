@@ -8,8 +8,8 @@ in_full  = in;
 out_full = out;
 close all
 A=1;
-Starth=1;
-Endh=24*3;
+Starth=24*1;
+Endh=24*7;
 %% display results
 for a=1:A
     %%------------------------ thermal unit -------------------------------
@@ -19,6 +19,12 @@ for a=1:A
     figure;
     stairs(out_full(a).S(Starth:Endh,:));
     title(['thermal unit number in area' num2str(a)]);
+    figure;
+    stairs(out_full(a).Y(Starth:Endh,:));
+    title(['thermal unit Y in area' num2str(a)]);
+    figure;
+    stairs(out_full(a).Z(Starth:Endh,:));
+    title(['thermal unit Z in area' num2str(a)]);
     %%------------------------------- wind ------------------------------------
     figure;
     hold on;
