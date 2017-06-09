@@ -65,9 +65,9 @@ end
 Constraint=[];
 %--------------------- thermal unit constraints ------------------------
 % binary & interger variable logic
-Constraint=[Constraint,(Ng.*Z(1,:) <= S(1,:)-S_t0 <= Ng.*Y(1,:)):'logical_1t0'];
+Constraint=[Constraint,(-Ng.*Z(1,:) <= S(1,:)-S_t0 <= Ng.*Y(1,:)):'logical_1t0'];
 for t=2:T
-    Constraint=[Constraint,(Ng.*Z(t,:) <= S(t,:)-S(t-1,:) <= Ng.*Y(t,:)):'logical_1'];
+    Constraint=[Constraint,(-Ng.*Z(t,:) <= S(t,:)-S(t-1,:) <= Ng.*Y(t,:)):'logical_1'];
 end
 Constraint=[Constraint,(Y+Z <= ones(T,Ntype)):'logical_2'];
 % output limit
@@ -115,8 +115,9 @@ for line=1:Ntie
         Constraint=[Constraint,(Ftie(:,line)==Ftie0(:,line)):'tie typeI'];
     elseif Tieline(line,2)==2
         for t=1:T
-            Constraint=[Constraint,(-Tieline(line,3)<=...
-                Ftie(t,line)<=Tieline(line,3)):'tie typeII'];
+%             Constraint=[Constraint,(-Tieline(line,3)<=...
+%                 Ftie(t,line)<=Tieline(line,3)):'tie typeII'];
+            Constraint=[Constraint,(0 <= Ftie(t,line) <= 0 ):'tie typeII'];
         end
     elseif Tieline(line,2)==3
         for t=1:T
