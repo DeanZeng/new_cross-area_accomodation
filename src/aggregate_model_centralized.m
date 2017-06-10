@@ -44,7 +44,7 @@ end
 % % lamda       = in.lamda;             %% multiplers
 % % Rho         = in.Rho;               %% coefficient of quadratic term
 T  = in(1).T;
-TD = in(1).TD;
+TD = 0;
 for a=1:A
     %% variable
     %%--------------------------- wind power & PV -----------------------------
@@ -52,12 +52,12 @@ for a=1:A
     var(a).Ppv  =sdpvar(T,1,'full');    %% output of PV 
 
     %%--------------------------- thermal unit --------------------------------
-    var(a).Pagg     = sdpvar(T,Ntype,'full');   %% output of thermal unit
-    var(a).S        = intvar(T,Ntype,'full');   %% on_off status;
-    var(a).Y        = binvar(T,Ntype,'full');   %% start up indicator
-    var(a).Z        = binvar(T,Ntype,'full');   %% shut down indicator
+    var(a).Pagg     = sdpvar(T,in(a).Ntype,'full');   %% output of thermal unit
+    var(a).S        = intvar(T,in(a).Ntype,'full');   %% on_off status;
+    var(a).Y        = binvar(T,in(a).Ntype,'full');   %% start up indicator
+    var(a).Z        = binvar(T,in(a).Ntype,'full');   %% shut down indicator
     %%---------------------------- tie lines ----------------------------------
-    var(a).Ftie = sdpvar(T,Ntie,'full');        %% tie-line power flow
+    var(a).Ftie = sdpvar(T,in(a).Ntie,'full');        %% tie-line power flow
     %% initial assign
     if UseX0
         assign(var(a).Pwind, x0(a).Pwind);
@@ -78,7 +78,7 @@ for a=1:A
     for t=2:T
         Constraint=[Constraint,(-in(a).Ng.*var(a).Z(t,:) <= var(a).S(t,:)-var(a).S(t-1,:) <= in(a).Ng.*var(a).Y(t,:)):'logical_1'];
     end
-    Constraint=[Constraint,(in(a).Y + in(a).Z <= ones(T,in(a).Ntype)):'logical_2'];
+    Constraint=[Constraint,(var(a).Y + var(a).Z <= ones(T,in(a).Ntype)):'logical_2'];
     % output limit
     for t = 1:T
        Constraint = [Constraint, (var(a).S(t,:).*in(a).Pmin <=...
@@ -101,7 +101,7 @@ for a=1:A
                 <= 1):'min_up'];
         end
         for t = in(a).TZ_t0+1:T
-            tt=max(1,t-in(a)Mindown(g)+1);
+            tt=max(1,t-in(a).Mindown(g)+1);
             Constraint = [Constraint, (sum(var(a).Z(tt:t,g))...
                 <= 1):'min_down'];
         end  
@@ -161,7 +161,7 @@ for a=1:A
         for la=1:in(a).Ntie
             for lb=1:in(b).Ntie
                 if (in(a).Tieline(la,1)==b)&&(in(b).Tieline(lb,1)==a)
-                     Constraint = [Constraint,(var(a).Ftie(:,la) == var(b).Ftie(:,lb)):'concensus'];
+                     Constraint = [Constraint,(var(a).Ftie(:,la) == -var(b).Ftie(:,lb)):'concensus'];
                 end
             end
         end
@@ -170,7 +170,7 @@ end
 %% objective
 minLang=0;
 for a=1:A
-minLang= -sum(var(a).Pwind)-sum(var(a).Ppv);
+minLang= minLang-sum(var(a).Pwind)-sum(var(a).Ppv);
 %     for la=1:Ntie
 %         minLang = minLang +...
 %             lamda(:,la)'*(Ftie(:,la)-Ftie_val(:,la))+...
@@ -193,14 +193,16 @@ if diag.problem ~= 0
 end
 toc
 %% read values of variables
-%%--------------------------- wind power & PV -----------------------------
-out.Pwind = value(var(a).Pwind);    %% output of wind power 
-out.Ppv   = value(Ppv);      %% output of PV 
-%%--------------------------- thermal unit --------------------------------
-out.Pagg  = value(Pagg);
-out.S     = value(S);
-out.Y     = value(Y);
-out.Z     = value(Z);
-%%---------------------------- tie lines ----------------------------------
-out.Ftie  = value( Ftie);
-out.minLang = value(minLang);
+for a=1:A
+    %%--------------------------- wind power & PV -----------------------------
+    out(a).Pwind = value(var(a).Pwind);    %% output of wind power 
+    out(a).Ppv   = value(var(a).Ppv);      %% output of PV 
+    %%--------------------------- thermal unit --------------------------------
+    out(a).Pagg  = value(var(a).Pagg);
+    out(a).S     = value(var(a).S);
+    out(a).Y     = value(var(a).Y);
+    out(a).Z     = value(var(a).Z);
+    %%---------------------------- tie lines ----------------------------------
+    out(a).Ftie  = value( var(a).Ftie);
+    out(a).minLang = value(minLang);
+end
