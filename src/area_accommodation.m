@@ -126,16 +126,15 @@ end
 %     Constraints=[Constraints,(sum(onoff(t,:).*Pmax - Pthermal(t,:)) >= ReserveUp(t)):'up reserve'];
 %     Constraints=[Constraints,(sum(onoff(t,:).*Pmin - Pthermal(t,:)) <= -ReserveDn(t)):'down reserve'];
 % end
-%%Objective
+%% Objective
 minLang=[];
-%%Objective
 minLang= -sum(Pwind)-sum(Ppv);
     for la=1:Ntie
         minLang = minLang +...
             lamda(:,la)'*(Ftie(:,la)-Ftie_val(:,la))+...
             Rho/2*(Ftie(:,la)-Ftie_val(:,la))'*(Ftie(:,la)-Ftie_val(:,la));                
     end
-%%solver
+%% solver
 Ops = sdpsettings('solver','gurobi','usex0',1,'verbose',0,'showprogress',0);
 Ops.gurobi.MIPGap=0.0002;
 %         Ops.gurobi.MIPGapAbs=1.0;
