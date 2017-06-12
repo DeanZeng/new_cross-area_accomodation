@@ -56,8 +56,8 @@ for a=1:A
     var(a).S        = intvar(T,in(a).Ntype,'full');   %% number of on units;
     var(a).Y        = binvar(T,in(a).Ntype,'full');   %% start up indicator
     var(a).Z        = binvar(T,in(a).Ntype,'full');   %% shut down indicator
-    var(a).SY       = intvar(T,in(a).Ntype,'full');   %% number of startup units;
-    var(a).SZ       = intvar(T,in(a).Ntype,'full');   %% number of shutdown units;
+    var(a).SY       = sdpvar(T,in(a).Ntype,'full');   %% number of startup units;
+    var(a).SZ       = sdpvar(T,in(a).Ntype,'full');   %% number of shutdown units;
     %%---------------------------- tie lines ----------------------------------
     var(a).Ftie = sdpvar(T,in(a).Ntie,'full');        %% tie-line power flow
     %% initial assign
@@ -186,7 +186,6 @@ minLang= minLang-sum(var(a).Pwind)-sum(var(a).Ppv);
 %     end
 end
 %% solution
-tic
 Ops = sdpsettings('solver','gurobi','usex0',1,'verbose',1,'showprogress',0);
 Ops.gurobi.MIPGap=0.0002;
 %         Ops.gurobi.MIPGapAbs=1.0;
@@ -199,7 +198,6 @@ if diag.problem ~= 0
     check(Constraint);
     error(yalmiperror(diag.problem));
 end
-toc
 %% read values of variables
 for a=1:A
     %%--------------------------- wind power & PV -----------------------------

@@ -47,8 +47,8 @@ Ppv  =sdpvar(T,1,'full');    %% output of PV
 %%--------------------------- thermal unit --------------------------------
 Pagg     = sdpvar(T,Ntype,'full');   %% output of thermal unit
 S        = intvar(T,Ntype,'full');   %% number of on units;
-SY       = intvar(T,Ntype,'full');   %% number of startup units
-SZ       = intvar(T,Ntype,'full');   %% number of shutdown units
+SY       = sdpvar(T,Ntype,'full');   %% number of startup units
+SZ       = sdpvar(T,Ntype,'full');   %% number of shutdown units
 Y        = binvar(T,Ntype,'full');   %% start up indicator
 Z        = binvar(T,Ntype,'full');   %% shut down indicator
 %%---------------------------- tie lines ----------------------------------
