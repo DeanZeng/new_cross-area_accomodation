@@ -46,7 +46,9 @@ Ppv  =sdpvar(T,1,'full');    %% output of PV
 
 %%--------------------------- thermal unit --------------------------------
 Pagg     = sdpvar(T,Ntype,'full');   %% output of thermal unit
-S        = intvar(T,Ntype,'full');   %% on_off status;
+S        = intvar(T,Ntype,'full');   %% number of on units;
+SY       = intvar(T,Ntype,'full');   %% number of startup units
+SZ       = intvar(T,Ntype,'full');   %% number of shutdown units
 Y        = binvar(T,Ntype,'full');   %% start up indicator
 Z        = binvar(T,Ntype,'full');   %% shut down indicator
 %%---------------------------- tie lines ----------------------------------
@@ -57,6 +59,8 @@ if UseX0
     assign(Ppv, x0.Ppv);
     assign(Pagg, x0.Pagg);
     assign(S, x0.S);
+    assign(SY, x0.SY);
+    assign(SZ, x0.SZ);
     assign(Y, x0.Y);
     assign(Z, x0.Z);
     assign(Ftie, x0.Ftie);
@@ -65,11 +69,15 @@ end
 Constraint=[];
 %--------------------- thermal unit constraints ------------------------
 % binary & interger variable logic
-Constraint=[Constraint,(-Ng.*Z(1,:) <= S(1,:)-S_t0 <= Ng.*Y(1,:)):'logical_1t0'];
+Constraint=[Constraint,(S(1,:)-S_t0 == SY(1,:) - SZ(1,:)):'logical_1t0'];
 for t=2:T
-    Constraint=[Constraint,(-Ng.*Z(t,:) <= S(t,:)-S(t-1,:) <= Ng.*Y(t,:)):'logical_1'];
+    Constraint=[Constraint,(S(t,:)-S(t-1,:) == SY(t,:) - SZ(t,:)):'logical_1'];
 end
-Constraint=[Constraint,(Y+Z <= ones(T,Ntype)):'logical_2'];
+for t=1:T
+    Constraint=[Constraint,( Y(t,:) <= SY(t,:) <= Ng.*Y(t,:)):'logical_2'];
+    Constraint=[Constraint,( Z(t,:) <= SZ(t,:) <= Ng.*Z(t,:)):'logical_3'];
+end
+Constraint=[Constraint,( Y+Z <= ones(T,Ntype)):'logical_4'];
 % output limit
 for t = 1:T
    Constraint = [Constraint, (S(t,:).*Pmin <=...
@@ -87,14 +95,14 @@ for g=1:Ntype
         Constraint = [Constraint,(Z(t,g) == 0 ):'initial Z'];
     end
     for t = TY_t0+1:T
-        tt=max(1,t-Minup(g)+1);
-        Constraint = [Constraint, (sum(Y(tt:t,g))...
-            <= 1):'min_up'];
+        tt=min(T,t+Mindown(g)-1);
+        Constraint = [Constraint, ((tt-t+1)-sum(Y(t:tt,g))...
+            >= (tt-t+1)*Z(t,g)):'min_down'];
     end
     for t = TZ_t0+1:T
-        tt=max(1,t-Mindown(g)+1);
-        Constraint = [Constraint, (sum(Z(tt:t,g))...
-            <= 1):'min_down'];
+        tt=min(T,t+Minup(g)-1);
+        Constraint = [Constraint, ((tt-t+1)-sum(Z(t:tt,g))...
+            >= (tt-t+1)*Y(t,g)):'min_down'];
     end  
 end
 % ramping up/down limit
@@ -178,6 +186,8 @@ out.Pagg  = value(Pagg);
 out.S     = value(S);
 out.Y     = value(Y);
 out.Z     = value(Z);
+out.SY    = value(SY);
+out.SZ    = value(SZ);
 %%---------------------------- tie lines ----------------------------------
 out.Ftie  = value( Ftie);
 out.minLang = value(minLang);

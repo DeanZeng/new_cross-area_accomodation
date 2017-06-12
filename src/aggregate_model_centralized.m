@@ -53,9 +53,11 @@ for a=1:A
 
     %%--------------------------- thermal unit --------------------------------
     var(a).Pagg     = sdpvar(T,in(a).Ntype,'full');   %% output of thermal unit
-    var(a).S        = intvar(T,in(a).Ntype,'full');   %% on_off status;
+    var(a).S        = intvar(T,in(a).Ntype,'full');   %% number of on units;
     var(a).Y        = binvar(T,in(a).Ntype,'full');   %% start up indicator
     var(a).Z        = binvar(T,in(a).Ntype,'full');   %% shut down indicator
+    var(a).SY       = intvar(T,in(a).Ntype,'full');   %% number of startup units;
+    var(a).SZ       = intvar(T,in(a).Ntype,'full');   %% number of shutdown units;
     %%---------------------------- tie lines ----------------------------------
     var(a).Ftie = sdpvar(T,in(a).Ntie,'full');        %% tie-line power flow
     %% initial assign
@@ -66,6 +68,8 @@ for a=1:A
         assign(var(a).S, x0(a).S);
         assign(var(a).Y, x0(a).Y);
         assign(var(a).Z, x0(a).Z);
+        assign(var(a).SY, x0(a).SY);
+        assign(var(a).SZ, x0(a).SZ);
         assign(var(a).Ftie, x0(a).Ftie);
     end 
 end
@@ -74,11 +78,15 @@ Constraint=[];
 for a=1:A
     %--------------------- thermal unit constraints ------------------------
     % binary & interger variable logic
-    Constraint=[Constraint,(-in(a).Ng.*var(a).Z(1,:) <= var(a).S(1,:)-in(a).S_t0 <= in(a).Ng.*var(a).Y(1,:)):'logical_1t0'];
+    Constraint=[Constraint,( var(a).S(1,:)-in(a).S_t0 == var(a).SY(1,:) - var(a).SZ(1,:) ):'logical_1t0'];
     for t=2:T
-        Constraint=[Constraint,(-in(a).Ng.*var(a).Z(t,:) <= var(a).S(t,:)-var(a).S(t-1,:) <= in(a).Ng.*var(a).Y(t,:)):'logical_1'];
+        Constraint=[Constraint,( var(a).S(t,:)- var(a).S(t-1,:) == var(a).SY(t,:) - var(a).SZ(t,:) ):'logical_1'];
     end
-    Constraint=[Constraint,(var(a).Y + var(a).Z <= ones(T,in(a).Ntype)):'logical_2'];
+    for t=1:T
+        Constraint=[Constraint,( var(a).Y(t,:) <= var(a).SY(t,:) <= in(a).Ng.*var(a).Y(t,:)):'logical_2'];
+        Constraint=[Constraint,( var(a).Z(t,:) <= var(a).SZ(t,:) <= in(a).Ng.*var(a).Z(t,:)):'logical_3'];
+    end
+    Constraint=[Constraint,(var(a).Y + var(a).Z <= ones(T,in(a).Ntype)):'logical_4'];
     % output limit
     for t = 1:T
        Constraint = [Constraint, (var(a).S(t,:).*in(a).Pmin <=...
@@ -96,14 +104,14 @@ for a=1:A
             Constraint = [Constraint,(var(a).Z(t,g) == 0 ):'initial Z'];
         end
         for t = in(a).TY_t0+1:T
-            tt=max(1,t-in(a).Minup(g)+1);
-            Constraint = [Constraint, (sum(var(a).Y(tt:t,g))...
-                <= 1):'min_up'];
+            tt=min(T,t+in(a).Mindown(g)-1);
+            Constraint = [Constraint, ((tt-t+1) - sum(var(a).Y(t:tt,g))...
+                >= (tt-t+1)*var(a).Z(t,g)):'min_down'];
         end
         for t = in(a).TZ_t0+1:T
-            tt=max(1,t-in(a).Mindown(g)+1);
-            Constraint = [Constraint, (sum(var(a).Z(tt:t,g))...
-                <= 1):'min_down'];
+            tt=min(T,t+in(a).Minup(g)-1);
+            Constraint = [Constraint, ((tt-t+1) - sum(var(a).Z(t:tt,g))...
+                >= (tt-t+1)*var(a).Y(t,g)):'min_up'];
         end  
     end
     % ramping up/down limit
@@ -202,6 +210,8 @@ for a=1:A
     out(a).S     = value(var(a).S);
     out(a).Y     = value(var(a).Y);
     out(a).Z     = value(var(a).Z);
+    out(a).SY    = value(var(a).SY);
+    out(a).SZ    = value(var(a).SZ);
     %%---------------------------- tie lines ----------------------------------
     out(a).Ftie  = value( var(a).Ftie);
     out(a).minLang = value(minLang);
