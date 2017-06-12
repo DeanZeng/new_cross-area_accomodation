@@ -6,7 +6,7 @@ on=0;
 off=0;
 for i=1:N
     for t=0:T-1
-        if onoff(T-t)==0
+        if onoff(T-t,i)==0
             break;
         elseif on>Minup(i)
                 break;
@@ -22,7 +22,7 @@ for i=1:N
 end
 for i=1:N
     for t=0:T-1
-        if onoff(T-t)==1
+        if onoff(T-t,i)==1
             break;
         elseif off>Mindown(i)
                 break;

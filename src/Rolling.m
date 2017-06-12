@@ -53,7 +53,7 @@ for roll=1:RollNum
         else
             in_roll(a).Onoff_t0    = out_full(a).onoff(tRoll(1)-1,:);      
             in_roll(a).Pthermal_t0 = out_full(a).Pthermal(tRoll(1)-1,:);    
-            [in_roll(a).On_t0,in_roll(a).Off_t0] = getOnoff_t0(out_full(a).onoff,in_roll(a).Minup,in_roll(a).Mindown);       
+            [in_roll(a).On_t0,in_roll(a).Off_t0] = getOnoff_t0(out_full(a).onoff(1:tRoll(1)-1,:),in_roll(a).Minup,in_roll(a).Mindown);       
         end
         in_roll(a).Demand    = in_full(a).Demand(tRoll,:);        
         in_roll(a).Windmax   = in_full(a).Windmax(tRoll,:); 
