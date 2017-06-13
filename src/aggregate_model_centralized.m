@@ -192,11 +192,15 @@ Ops.gurobi.MIPGap=0.0002;
 Ops.gurobi.OptimalityTol = 0.0002;
 %         Ops.gurobi.FeasRelaxBigM   = 1.0e10;
 Ops.gurobi.DisplayInterval = 20;
+Ops.gurobi.TimeLimit = 300;
 diag = optimize(Constraint,minLang,Ops); 
 % check(Constraints);
 if diag.problem ~= 0
-    check(Constraint);
-    error(yalmiperror(diag.problem));
+    if diag.problem ==3
+        warning(yalmiperror(diag.problem));
+    else
+        error(yalmiperror(diag.problem));
+    end
 end
 %% read values of variables
 for a=1:A
