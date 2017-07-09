@@ -4,12 +4,12 @@
 % in_full = load('input_data.mat', 'in');
 % in_full = in_full.in;
 % load results.mat;
-in_full  = in;
-out_full = out;
+% in_full  = in;
+% out_full = out;
 close all
-A=1;
-Starth=24*1;
-Endh=24*7;
+A=2;
+Starth=24*7*9+1;
+Endh=24*7*11;
 %% display results
 for a=1:A
     %%------------------------ thermal unit -------------------------------

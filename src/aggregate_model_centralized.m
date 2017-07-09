@@ -153,17 +153,12 @@ for a=1:A
             == in(a).Demand(t)+sum(var(a).Ftie(t,:))):'power balance'];
     end
     %------------------------------- spinning reserve ---------------------
-    % for t=1:T
-    %     Constraint=[Constraint,(sum(onoff(t,:).*Pmax)+Windmax(t)+PVmax(t)...
-    %         +sum(Tieline(:,3))>=Demand(t)+ReserveUp(t)):'up reserve'];
-    %     Constraint=[Constraint,(sum(onoff(t,:).*Pmin)-sum(Tieline(:,3))...
-    %         <=Demand(t)-ReserveDn(t)):'down reserve'];
-    % end
-    % for t=1:T
-    %     Constraint=[Constraint,(sum(onoff(t,:).*Pmax - Pthermal(t,:)) >= ReserveUp(t)):'up reserve'];
-    %     Constraint=[Constraint,(sum(onoff(t,:).*Pmin - Pthermal(t,:)) <= -ReserveDn(t)):'down reserve'];
-    % end
+    for t=1:T
+        Constraint=[Constraint,(sum(var(a).S(t,:).*in(a).Pmax - var(a).Pagg(t,:)) >= 0.02*in(a).Demand(t)):'up reserve'];
+        Constraint=[Constraint,(sum(var(a).Pagg(t,:) - var(a).S(t,:).*in(a).Pmin) >= 0.02*in(a).Demand(t)):'down reserve'];
+    end
 end
+    %------------------------------- spinning reserve ---------------------
 for a=1:A
     for b=a+1:A
         for la=1:in(a).Ntie
